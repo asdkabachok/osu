@@ -118,10 +118,10 @@ namespace osu.Game.Database
             notification.Text = $"{HumanisedModelName.Humanize(LetterCasing.Title)} import is initialising...";
             notification.State = ProgressNotificationState.Active;
 
-            await pauseIfNecessaryAsync(parameters, notification, notification.CancellationToken).ConfigureAwait(false);
-
             try
             {
+                await pauseIfNecessaryAsync(parameters, notification, notification.CancellationToken).ConfigureAwait(false);
+
                 await Parallel.ForEachAsync(tasks, notification.CancellationToken, async (task, cancellation) =>
                 {
                     cancellation.ThrowIfCancellationRequested();
@@ -146,7 +146,8 @@ namespace osu.Game.Database
                     {
                         // We don't want to abort the full import process based off difficulty calculator's internal cancellation
                         // see https://github.com/ppy/osu/blob/91f3be5feaab0c73c17e1a8c270516aa9bee1e14/osu.Game/Rulesets/Difficulty/DifficultyCalculator.cs#L65.
-                        if (cancelled.CancellationToken == notification.CancellationToken)
+                        // Parallel.ForEachAsync supplies its own token, so check the loop's cancellation state rather than comparing tokens.
+                        if (cancellation.IsCancellationRequested)
                             throw;
 
                         Logger.Error(cancelled, $@"Timed out importing ({task})", LoggingTarget.Database);
