@@ -163,6 +163,29 @@ namespace osu.Game.Tests.NonVisual
         }
 
         [Test]
+        public async Task TestChildWithMultipleExceptionsUsesAwaitSemantics()
+        {
+            var first = new InvalidOperationException("First child failed");
+            var second = new ArgumentException("Second child failed");
+            Task child = Task.WhenAll(Task.FromException(first), Task.FromException(second));
+            var chain = new TaskChain();
+            Task failed = chain.Add(() => child);
+            Task next = chain.Add(() => { });
+
+            var propagated = Assert.CatchAsync<Exception>(async () => await failed.WaitAsync(timeout));
+
+            Assert.That(propagated, Is.SameAs(first).Or.SameAs(second));
+            Assert.That(failed.IsFaulted, Is.True);
+
+            var aggregate = failed.Exception!;
+            Assert.That(aggregate.InnerExceptions, Has.Count.EqualTo(1));
+            Assert.That(aggregate.InnerException, Is.SameAs(propagated));
+            Assert.That(child.Exception!.InnerExceptions, Is.EquivalentTo(new Exception[] { first, second }));
+
+            await next.WaitAsync(timeout);
+        }
+
+        [Test]
         public async Task TestCancellationDuringExecutionTakesPrecedenceOverException()
         {
             var started = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);

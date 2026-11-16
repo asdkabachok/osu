@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Moq;
 using NUnit.Framework;
 using osu.Framework.Allocation;
+using osu.Framework.Extensions;
 using osu.Game.Database;
 using osu.Game.Online.API;
 using osu.Game.Online.API.Requests;
@@ -84,7 +85,7 @@ namespace osu.Game.Tests.Database
         }
 
         [Test]
-        public async Task TestCancellationDoesNotCancelOtherLookups()
+        public async Task TestCancellationDoesNotChangeSharedLookupResults()
         {
             var blockerStarted = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             var blockerResponse = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -113,8 +114,11 @@ namespace osu.Game.Tests.Database
             var blocker = cache.GetUserAsync(999);
             await blockerStarted.Task.WaitAsync(timeout);
 
-            var cancelled = cache.GetUserAsync(1, cancellation.Token);
+            var withCancellation = cache.GetUserAsync(1, cancellation.Token);
             var other = cache.GetUserAsync(1);
+            // UI consumers read the completed lookup from a continuation without expecting cancellation.
+            var userForConsumer = withCancellation.ContinueWith(task => task.GetResultSafely(),
+                CancellationToken.None, TaskContinuationOptions.None, TaskScheduler.Default);
 
             try
             {
@@ -122,7 +126,6 @@ namespace osu.Game.Tests.Database
                 await started.Task.WaitAsync(timeout);
 
                 await cancellation.CancelAsync();
-                Assert.CatchAsync<OperationCanceledException>(async () => await cancelled.WaitAsync(timeout));
                 Assert.That(other.IsCompleted, Is.False);
             }
             finally
@@ -132,21 +135,59 @@ namespace osu.Game.Tests.Database
             }
 
             await blocker.WaitAsync(timeout);
+            Assert.That((await userForConsumer.WaitAsync(timeout))?.Id, Is.EqualTo(1));
+            Assert.That(withCancellation.IsCompletedSuccessfully, Is.True);
             Assert.That((await other.WaitAsync(timeout))?.Id, Is.EqualTo(1));
             Assert.That(requestsForUser, Is.EqualTo(1));
         }
 
         [Test]
-        public void TestPreCancelledLookupDoesNotPerformRequest()
+        public async Task TestPreCancelledSingleLookupPreservesResult()
         {
             var api = new Mock<IAPIProvider>();
+            api.Setup(p => p.PerformAsync(It.IsAny<APIRequest>())).Returns<APIRequest>(request =>
+            {
+                succeed(request, api.Object);
+                return Task.CompletedTask;
+            });
+
             using var cache = createCache(api.Object);
             using var cancellation = new CancellationTokenSource();
             cancellation.Cancel();
 
-            Assert.That(Assert.CatchAsync<OperationCanceledException>(async () => await cache.GetUserAsync(1, cancellation.Token).WaitAsync(timeout))!.CancellationToken,
-                Is.EqualTo(cancellation.Token));
-            api.Verify(p => p.PerformAsync(It.IsAny<APIRequest>()), Times.Never());
+            Assert.That((await cache.GetUserAsync(1, cancellation.Token).WaitAsync(timeout))?.Id, Is.EqualTo(1));
+            api.Verify(p => p.PerformAsync(It.IsAny<APIRequest>()), Times.Once());
+        }
+
+        [Test]
+        public async Task TestBatchLookupPreservesCancellation()
+        {
+            var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var response = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var api = new Mock<IAPIProvider>();
+            api.Setup(p => p.PerformAsync(It.IsAny<APIRequest>())).Returns<APIRequest>(request =>
+            {
+                succeed(request, api.Object);
+                started.TrySetResult();
+                return response.Task;
+            });
+
+            using var cache = createCache(api.Object);
+            using var cancellation = new CancellationTokenSource();
+            var batch = cache.GetUsersAsync([1], cancellation.Token);
+            await started.Task.WaitAsync(timeout);
+
+            try
+            {
+                await cancellation.CancelAsync();
+                Assert.CatchAsync<OperationCanceledException>(async () => await batch.WaitAsync(timeout));
+            }
+            finally
+            {
+                response.TrySetResult();
+            }
+
+            Assert.That((await cache.GetUserAsync(1).WaitAsync(timeout))?.Id, Is.EqualTo(1));
         }
 
         [Test]

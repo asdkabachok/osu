@@ -27,8 +27,7 @@ namespace osu.Game.Tests.Database
         private ProgressNotification notification = null!;
         private Task<IEnumerable<Live<BeatmapSetInfo>>> importTask = null!;
         private TaskCompletionSource releaseImport = null!;
-        private OperationCanceledException? cancellationException;
-        private int loggedCancellations;
+        private CancellationLog cancellationLog = null!;
 
         protected override bool UseFreshStoragePerRun => true;
 
@@ -38,10 +37,10 @@ namespace osu.Game.Tests.Database
             AddStep("create importer and notification", () =>
             {
                 importer = new TestBeatmapImporter(LocalStorage, Realm);
+                importTask = null!;
                 releaseImport = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-                cancellationException = null;
-                loggedCancellations = 0;
-                Logger.NewEntry += onNewLogEntry;
+                cancellationLog = new CancellationLog();
+                Logger.NewEntry += cancellationLog.OnNewLogEntry;
 
                 Child = new DependencyProvidingContainer
                 {
@@ -54,10 +53,28 @@ namespace osu.Game.Tests.Database
         }
 
         [TearDown]
-        public void TearDown()
+        public async Task TearDown()
         {
+            var task = importTask;
+            var log = cancellationLog;
+
+            if (importer != null)
+                importer.PauseImports = false;
             releaseImport?.TrySetResult();
-            Logger.NewEntry -= onNewLogEntry;
+
+            try
+            {
+                if (task != null)
+                    await task.WaitAsync(TimeSpan.FromSeconds(10)).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (task != null && task.IsCanceled)
+            {
+            }
+            finally
+            {
+                if (log != null)
+                    Logger.NewEntry -= log.OnNewLogEntry;
+            }
         }
 
         [Test]
@@ -83,13 +100,16 @@ namespace osu.Game.Tests.Database
 
             AddStep("start import", () =>
             {
+                var release = releaseImport;
+                var log = cancellationLog;
                 importer.ImportAction = cancellation =>
                 {
                     started.TrySetResult(cancellation);
-                    if (!releaseImport.Task.Wait(TimeSpan.FromSeconds(10)))
+                    if (!release.Task.Wait(TimeSpan.FromSeconds(10)))
                         throw new TimeoutException("Import was not released by the test.");
-                    cancellationException = new OperationCanceledException(cancellation);
-                    throw cancellationException;
+                    var exception = new OperationCanceledException(cancellation);
+                    log.ExpectedException = exception;
+                    throw exception;
                 };
 
                 importTask = importer.Import(notification, [createImportTask()]);
@@ -102,7 +122,7 @@ namespace osu.Game.Tests.Database
             AddStep("release import", () => releaseImport.TrySetResult());
             AddUntilStep("import finished", () => importTask.IsCompleted);
             AddAssert("import cancelled", () => importTask.IsCanceled);
-            AddAssert("cancellation not logged as failure", () => Volatile.Read(ref loggedCancellations), () => Is.Zero);
+            AddAssert("cancellation not logged as failure", () => cancellationLog.Count, () => Is.Zero);
         }
 
         [Test]
@@ -112,12 +132,14 @@ namespace osu.Game.Tests.Database
 
             AddStep("start import with internal cancellation", () =>
             {
+                var log = cancellationLog;
                 importer.ImportAction = _ =>
                 {
                     if (Interlocked.Increment(ref attemptedImports) == 1)
                     {
-                        cancellationException = new OperationCanceledException(new CancellationToken(true));
-                        throw cancellationException;
+                        var exception = new OperationCanceledException(new CancellationToken(true));
+                        log.ExpectedException = exception;
+                        throw exception;
                     }
                 };
 
@@ -127,13 +149,22 @@ namespace osu.Game.Tests.Database
             AddUntilStep("import finished", () => importTask.IsCompleted);
             AddAssert("batch completed successfully", () => importTask.IsCompletedSuccessfully);
             AddAssert("both imports attempted", () => Volatile.Read(ref attemptedImports), () => Is.EqualTo(2));
-            AddAssert("internal cancellation logged", () => Volatile.Read(ref loggedCancellations), () => Is.EqualTo(1));
+            AddAssert("internal cancellation logged", () => cancellationLog.Count, () => Is.EqualTo(1));
         }
 
-        private void onNewLogEntry(LogEntry entry)
+        private sealed class CancellationLog
         {
-            if (entry.Exception != null && ReferenceEquals(entry.Exception, cancellationException))
-                Interlocked.Increment(ref loggedCancellations);
+            public OperationCanceledException? ExpectedException;
+
+            private int count;
+
+            public int Count => Volatile.Read(ref count);
+
+            public void OnNewLogEntry(LogEntry entry)
+            {
+                if (entry.Exception != null && ReferenceEquals(entry.Exception, ExpectedException))
+                    Interlocked.Increment(ref count);
+            }
         }
 
         private static ImportTask createImportTask() => new ImportTask(new MemoryStream([0]), "test.osu");

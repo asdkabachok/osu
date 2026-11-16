@@ -67,12 +67,7 @@ namespace osu.Game.Database
 
         // cannot be sealed due to test usages (see TestUserLookupCache).
         protected override async Task<TValue?> ComputeValueAsync(TLookup lookup, CancellationToken token = default)
-        {
-            token.ThrowIfCancellationRequested();
-
-            // A request can satisfy multiple callers. Only cancel this caller's wait, not the shared request.
-            return await queryValue(lookup).WaitAsync(token).ConfigureAwait(false);
-        }
+            => await queryValue(lookup).ConfigureAwait(false);
 
         private readonly Queue<(TLookup id, TaskCompletionSource<TValue?>)> pendingTasks = new Queue<(TLookup, TaskCompletionSource<TValue?>)>();
         private Task? pendingRequestTask;
