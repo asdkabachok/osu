@@ -77,7 +77,7 @@ namespace osu.Game.Database
         {
             lock (taskAssignmentLock)
             {
-                var tcs = new TaskCompletionSource<TValue?>();
+                var tcs = new TaskCompletionSource<TValue?>(TaskCreationOptions.RunContinuationsAsynchronously);
 
                 // Add to the queue.
                 pendingTasks.Enqueue((id, tcs));
@@ -95,62 +95,68 @@ namespace osu.Game.Database
             // contains at most 50 unique IDs from tasks, which is used to perform the lookup.
             var nextTaskBatch = new Dictionary<TLookup, List<TaskCompletionSource<TValue?>>>();
 
-            // Grab at most 50 unique IDs from the queue.
-            lock (taskAssignmentLock)
+            try
             {
-                while (pendingTasks.Count > 0 && nextTaskBatch.Count < 50)
+                // Grab at most 50 unique IDs from the queue.
+                lock (taskAssignmentLock)
                 {
-                    (TLookup id, TaskCompletionSource<TValue?> task) next = pendingTasks.Dequeue();
-
-                    // Perform a secondary check for existence, in case the value was queried in a previous batch.
-                    if (CheckExists(next.id, out var existing))
-                        next.task.SetResult(existing);
-                    else
+                    while (pendingTasks.Count > 0 && nextTaskBatch.Count < 50)
                     {
-                        if (nextTaskBatch.TryGetValue(next.id, out var tasks))
-                            tasks.Add(next.task);
+                        (TLookup id, TaskCompletionSource<TValue?> task) next = pendingTasks.Dequeue();
+
+                        // Perform a secondary check for existence, in case the value was queried in a previous batch.
+                        if (CheckExists(next.id, out var existing))
+                            next.task.SetResult(existing);
                         else
-                            nextTaskBatch[next.id] = new List<TaskCompletionSource<TValue?>> { next.task };
+                        {
+                            if (nextTaskBatch.TryGetValue(next.id, out var tasks))
+                                tasks.Add(next.task);
+                            else
+                                nextTaskBatch[next.id] = new List<TaskCompletionSource<TValue?>> { next.task };
+                        }
                     }
                 }
-            }
 
-            if (nextTaskBatch.Count == 0)
-            {
-                finishPendingTask();
-                return;
-            }
+                if (nextTaskBatch.Count == 0)
+                    return;
 
-            // Query the values.
-            var request = CreateRequest(nextTaskBatch.Keys.ToArray());
+                // Query the values.
+                var request = CreateRequest(nextTaskBatch.Keys.ToArray());
 
-            // rather than queueing, we maintain our own single-threaded request stream.
-            // todo: we probably want retry logic here.
-            await api.PerformAsync(request).ConfigureAwait(false);
+                // rather than queueing, we maintain our own single-threaded request stream.
+                // todo: we probably want retry logic here.
+                await api.PerformAsync(request).ConfigureAwait(false);
 
-            finishPendingTask();
+                var foundValues = RetrieveResults(request);
 
-            var foundValues = RetrieveResults(request);
-
-            if (foundValues != null)
-            {
-                foreach (var value in foundValues)
+                if (foundValues != null)
                 {
-                    if (nextTaskBatch.TryGetValue(value.OnlineID, out var tasks))
+                    foreach (var value in foundValues)
                     {
-                        foreach (var task in tasks)
-                            task.SetResult(value);
+                        if (nextTaskBatch.TryGetValue(value.OnlineID, out var tasks))
+                        {
+                            foreach (var task in tasks)
+                                task.SetResult(value);
 
-                        nextTaskBatch.Remove(value.OnlineID);
+                            nextTaskBatch.Remove(value.OnlineID);
+                        }
                     }
                 }
             }
-
-            // if any tasks remain which were not satisfied, return null.
-            foreach (var tasks in nextTaskBatch.Values)
+            catch (Exception e)
             {
-                foreach (var task in tasks)
-                    task.SetResult(null);
+                Logger.Error(e, $"{nameof(OnlineLookupCache<,,>)} lookup request failed!");
+            }
+            finally
+            {
+                // Complete every waiter even if request creation, execution or result enumeration failed.
+                foreach (var tasks in nextTaskBatch.Values)
+                {
+                    foreach (var task in tasks)
+                        task.TrySetResult(null);
+                }
+
+                finishPendingTask();
             }
         }
 

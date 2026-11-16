@@ -2,9 +2,11 @@
 // See the LICENCE file in the repository root for full licence text.
 
 using System;
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
 using osu.Framework.Development;
@@ -26,11 +28,28 @@ namespace osu.Game.Beatmaps
     {
         private readonly Storage storage;
 
-        private FileWebRequest? cacheDownloadRequest;
+        // Keep one state for each path for the lifetime of the process. Removing completed entries could
+        // give a new source a different database lock while an existing source still uses the old one.
+        private static readonly ConcurrentDictionary<string, CacheState> cache_states = new ConcurrentDictionary<string, CacheState>(
+            OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
+
+        private readonly Func<string, Task> downloadCache;
+        private readonly bool allowFetch;
 
         private const string cache_database_name = @"online.db";
 
         public LocalCachedBeatmapMetadataSource(Storage storage)
+            : this(storage, downloadCacheFile, !DebugUtils.IsNUnitRunning, true)
+        {
+        }
+
+        // An injected downloader allows tests to exercise the complete refresh without internet access.
+        internal LocalCachedBeatmapMetadataSource(Storage storage, Func<string, Task> downloadCache, bool fetchOnConstruction = false)
+            : this(storage, downloadCache, true, fetchOnConstruction)
+        {
+        }
+
+        private LocalCachedBeatmapMetadataSource(Storage storage, Func<string, Task> downloadCache, bool allowFetch, bool fetchOnConstruction)
         {
             try
             {
@@ -44,25 +63,22 @@ namespace osu.Game.Beatmaps
             }
 
             this.storage = storage;
-
-            if (shouldFetchCache())
-                FetchCache();
+            this.downloadCache = downloadCache;
+            this.allowFetch = allowFetch;
+            if (fetchOnConstruction)
+                fetchCache(onlyIfNeeded: true);
         }
 
-        private bool shouldFetchCache()
+        private static bool shouldFetchCache(CacheContext context)
         {
-            // avoid downloading / using cache for unit tests.
-            if (DebugUtils.IsNUnitRunning)
-                return false;
-
-            if (!storage.Exists(cache_database_name))
+            if (!File.Exists(context.FilePath))
             {
                 log(@"Fetching local cache because it does not exist.");
                 return true;
             }
 
             // periodically update the cache to include newer beatmaps.
-            var fileInfo = new FileInfo(storage.GetFullPath(cache_database_name));
+            var fileInfo = new FileInfo(context.FilePath);
 
             if (fileInfo.LastWriteTime < DateTime.Now.AddMonths(-1))
             {
@@ -73,17 +89,34 @@ namespace osu.Game.Beatmaps
             return false;
         }
 
-        public bool Available =>
-            // no download in progress.
-            cacheDownloadRequest == null
-            // cached database exists on disk.
-            && storage.Exists(cache_database_name);
+        public bool Available => isAvailable(getCacheContext());
+
+        private static bool isAvailable(CacheContext context)
+        {
+            lock (context.State.FetchLock)
+                return context.State.FetchTask?.IsCompleted != false && File.Exists(context.FilePath);
+        }
 
         public bool TryLookup(BeatmapInfo beatmapInfo, [NotNullWhen(true)] out OnlineBeatmapMetadata? onlineMetadata)
         {
+            var context = getCacheContext();
+            context.State.DatabaseLock.EnterReadLock();
+
+            try
+            {
+                return tryLookup(context, beatmapInfo, out onlineMetadata);
+            }
+            finally
+            {
+                context.State.DatabaseLock.ExitReadLock();
+            }
+        }
+
+        private bool tryLookup(CacheContext context, BeatmapInfo beatmapInfo, [NotNullWhen(true)] out OnlineBeatmapMetadata? onlineMetadata)
+        {
             Debug.Assert(beatmapInfo.BeatmapSet != null);
 
-            if (!Available)
+            if (!isAvailable(context))
             {
                 onlineMetadata = null;
                 return false;
@@ -98,7 +131,7 @@ namespace osu.Game.Beatmaps
 
             try
             {
-                using (var db = getConnection())
+                using (var db = createConnection(context.FilePath))
                 {
                     db.Open();
 
@@ -126,12 +159,9 @@ namespace osu.Game.Beatmaps
                 {
                     case 26: // SQLITE_NOTADB
                     case 11: // SQLITE_CORRUPT
-                        // only attempt purge & re-download if there is no other refetch in progress
-                        if (cacheDownloadRequest != null)
-                            return false;
-
-                        tryPurgeCache();
-                        FetchCache();
+                        // A different source may already be refreshing this path. Join that operation
+                        // without deleting a database which could have been replaced since the failed read.
+                        fetchCache(context, onlyIfNeeded: false);
                         return false;
                 }
 
@@ -146,111 +176,161 @@ namespace osu.Game.Beatmaps
             }
         }
 
-        private void tryPurgeCache()
-        {
-            log(@"Local metadata cache is corrupted; attempting purge.");
-
-            try
+        private static SqliteConnection createConnection(string path, bool pooling = true) =>
+            new SqliteConnection(new SqliteConnectionStringBuilder
             {
-                File.Delete(storage.GetFullPath(cache_database_name));
-            }
-            catch (Exception ex)
-            {
-                log($@"Failed to purge local metadata cache: {ex}");
-            }
-
-            log(@"Local metadata cache purged due to corruption.");
-        }
-
-        private SqliteConnection getConnection() =>
-            new SqliteConnection(string.Concat(@"Data Source=", storage.GetFullPath(@"online.db", true)));
+                DataSource = path,
+                Mode = SqliteOpenMode.ReadOnly,
+                Pooling = pooling
+            }.ToString());
 
         /// <summary>
         /// Force an immediate fetch of the latest cache database.
         /// </summary>
-        public Task FetchCache()
+        public Task FetchCache() => fetchCache(onlyIfNeeded: false);
+
+        private Task fetchCache(bool onlyIfNeeded) => fetchCache(getCacheContext(), onlyIfNeeded);
+
+        private Task fetchCache(CacheContext context, bool onlyIfNeeded)
         {
-            // This is guarded in the local call, but also included as a safety
-            // for any incorrect public usage.
-            if (DebugUtils.IsNUnitRunning)
+            if (!allowFetch)
                 return Task.CompletedTask;
 
-            bool isRefetch = storage.Exists(cache_database_name);
-
-            string cacheFilePath = storage.GetFullPath(cache_database_name);
-            string compressedCacheFilePath = $@"{cacheFilePath}.bz2";
-
-            cacheDownloadRequest = new FileWebRequest(compressedCacheFilePath, $@"https://assets.ppy.sh/client-resources/{cache_database_name}.bz2?{DateTimeOffset.UtcNow:yyyyMMdd}");
-
-            cacheDownloadRequest.Failed += ex =>
+            lock (context.State.FetchLock)
             {
-                File.Delete(compressedCacheFilePath);
+                if (context.State.FetchTask?.IsCompleted == false)
+                    return context.State.FetchTask;
 
-                // don't clobber the cache when refetching if the download didn't succeed. seems excessive.
-                // consequently, also null the download request to allow the existing cache to be used (see `Available`).
-                if (isRefetch)
-                    cacheDownloadRequest = null;
-                else
-                    File.Delete(cacheFilePath);
+                // Recheck freshness after acquiring the shared state, as another source may have
+                // finished its constructor-initiated fetch before this source reached the lock.
+                if (onlyIfNeeded && !shouldFetchCache(context))
+                    return Task.CompletedTask;
 
-                log($@"Online cache download failed: {ex}");
-            };
+                return context.State.FetchTask = Task.Run(() => fetchCacheAsync(context));
+            }
+        }
 
-            cacheDownloadRequest.Finished += () =>
+        private async Task fetchCacheAsync(CacheContext context)
+        {
+            string temporaryPath = $@"{context.FilePath}.{Guid.NewGuid():N}.tmp";
+            string compressedCacheFilePath = $@"{temporaryPath}.bz2";
+
+            try
             {
+                await downloadCache(compressedCacheFilePath).ConfigureAwait(false);
+
+                using (var stream = File.OpenRead(compressedCacheFilePath))
+                using (var outStream = new FileStream(temporaryPath, FileMode.CreateNew, FileAccess.Write))
+                using (var bz2 = BZip2Stream.Create(stream, CompressionMode.Decompress, false))
+                    bz2.CopyTo(outStream);
+
+                validateCache(temporaryPath);
+
+                context.State.DatabaseLock.EnterWriteLock();
+
                 try
                 {
-                    // `SqliteConnection` by default uses pooling.
-                    // disposing an `SqliteConnection` is not enough to get `Microsoft.Data.Sqlite` to close the database file.
-                    // this means that overwriting the file may fail if the pools are not cleared before trying.
-                    // this fails especially loudly on Windows because of Windows file delete semantics being exclusive-write
-                    // rather than Unix's "file is marked for deletion after last reader closes the fd".
-                    SqliteConnection.ClearAllPools();
+                    // All readers have disposed their connections. Close only this database's idle
+                    // connections before replacing it, including on platforms which prohibit replacing open files.
+                    using (var connection = createConnection(context.FilePath))
+                        SqliteConnection.ClearPool(connection);
 
-                    using (var stream = File.OpenRead(cacheDownloadRequest.Filename))
-                    using (var outStream = File.OpenWrite(cacheFilePath))
-                    {
-                        // ensure to clobber any and all existing data to avoid accidental corruption.
-                        outStream.SetLength(0);
-
-                        using (var bz2 = BZip2Stream.Create(stream, CompressionMode.Decompress, false))
-                            bz2.CopyTo(outStream);
-                    }
-
-                    // set to null on completion to allow lookups to begin using the new source
-                    cacheDownloadRequest = null;
-                    log(@"Local cache fetch completed successfully.");
-                }
-                catch (Exception ex)
-                {
-                    log($@"Online cache extraction failed: {ex}");
-                    // at this point clobber the cache regardless of whether we're refetching, because by this point who knows what state the cache file is in.
-                    File.Delete(cacheFilePath);
+                    // Both paths are in the same directory, so publication does not copy partially
+                    // extracted bytes over the live database or delete the old file first.
+                    File.Move(temporaryPath, context.FilePath, overwrite: true);
                 }
                 finally
                 {
-                    File.Delete(compressedCacheFilePath);
+                    context.State.DatabaseLock.ExitWriteLock();
                 }
-            };
 
-            return Task.Run(async () =>
+                log(@"Local cache fetch completed successfully.");
+            }
+            catch (Exception ex)
             {
-                try
+                // Leave any previously published cache intact when download, extraction or publication fails.
+                log($@"Online cache refresh failed: {ex}");
+            }
+            finally
+            {
+                deleteTemporaryFile(temporaryPath);
+                deleteTemporaryFile(compressedCacheFilePath);
+            }
+        }
+
+        private static async Task downloadCacheFile(string filename)
+        {
+            using var request = new FileWebRequest(filename, $@"https://assets.ppy.sh/client-resources/{cache_database_name}.bz2?{DateTimeOffset.UtcNow:yyyyMMdd}");
+            await request.PerformAsync().ConfigureAwait(false);
+        }
+
+        private static void validateCache(string filename)
+        {
+            // Do not keep a pooled connection to the staging filename alive after validation.
+            using var connection = createConnection(filename, pooling: false);
+            connection.Open();
+
+            int version = getCacheVersion(connection);
+            if (version != 2 && version != 3)
+                throw new InvalidDataException($@"Unsupported local metadata cache version: {version}.");
+
+            using var command = connection.CreateCommand();
+            command.CommandText = @"PRAGMA quick_check(1)";
+            if (command.ExecuteScalar() as string != "ok")
+                throw new InvalidDataException("Local metadata cache failed SQLite quick_check.");
+
+            // Check the columns used by lookups, even if the downloaded database contains no rows.
+            command.CommandText =
+                """
+                SELECT b.beatmapset_id, b.beatmap_id, b.approved, b.user_id, b.checksum, b.filename, b.last_update, s.submit_date, s.approved_date
+                FROM osu_beatmaps b JOIN osu_beatmapsets s ON s.beatmapset_id = b.beatmapset_id
+                LIMIT 0
+                """;
+            using (command.ExecuteReader())
+            {
+            }
+
+            if (version == 3)
+            {
+                command.CommandText = "SELECT t.name FROM tags t JOIN beatmap_tags bt ON bt.tag_id = t.id WHERE bt.beatmap_id = 0 LIMIT 0";
+                using (command.ExecuteReader())
                 {
-                    await cacheDownloadRequest.PerformAsync().ConfigureAwait(false);
                 }
-                catch
-                {
-                    // Prevent throwing unobserved exceptions, as they will be logged from the network request to the log file anyway.
-                }
-            });
+            }
+        }
+
+        private static void deleteTemporaryFile(string path)
+        {
+            try
+            {
+                File.Delete(path);
+            }
+            catch (Exception ex)
+            {
+                log($@"Failed to remove temporary metadata cache file {path}: {ex}");
+            }
         }
 
         public bool IsAtLeastVersion(int version)
         {
+            var context = getCacheContext();
+            context.State.DatabaseLock.EnterReadLock();
+
             try
             {
-                using (var connection = getConnection())
+                return isAvailable(context) && isAtLeastVersion(context, version);
+            }
+            finally
+            {
+                context.State.DatabaseLock.ExitReadLock();
+            }
+        }
+
+        private static bool isAtLeastVersion(CacheContext context, int version)
+        {
+            try
+            {
+                using (var connection = createConnection(context.FilePath))
                 {
                     connection.Open();
                     return getCacheVersion(connection) >= version;
@@ -263,7 +343,7 @@ namespace osu.Game.Beatmaps
             }
         }
 
-        private int getCacheVersion(SqliteConnection connection)
+        private static int getCacheVersion(SqliteConnection connection)
         {
             using (var cmd = connection.CreateCommand())
             {
@@ -294,7 +374,7 @@ namespace osu.Game.Beatmaps
 
         public DateTime? GetCacheFetchDate()
         {
-            string path = storage.GetFullPath(cache_database_name);
+            string path = getCacheContext().FilePath;
             var file = new FileInfo(path);
             if (!file.Exists)
                 return null;
@@ -413,7 +493,33 @@ namespace osu.Game.Beatmaps
 
         public void Dispose()
         {
-            cacheDownloadRequest?.Dispose();
+            // A refresh is shared by all sources for this path and owns its request until completion.
+        }
+
+        private CacheContext getCacheContext()
+        {
+            // Storage can change its target during a live data migration. Each operation keeps a
+            // consistent path and lock, while later operations follow the new storage target.
+            string path = Path.GetFullPath(storage.GetFullPath(cache_database_name));
+            var state = cache_states.GetOrAdd(path, static p => new CacheState(p));
+            return new CacheContext(state.FilePath, state);
+        }
+
+        private readonly record struct CacheContext(string FilePath, CacheState State);
+
+        private sealed class CacheState
+        {
+            // Share the spelling of the path as well as its lock, so case aliases on Windows
+            // cannot create separate SQLite connection pools for the same database.
+            public readonly string FilePath;
+            public readonly Lock FetchLock = new Lock();
+            public readonly ReaderWriterLockSlim DatabaseLock = new ReaderWriterLockSlim();
+            public Task? FetchTask;
+
+            public CacheState(string filePath)
+            {
+                FilePath = filePath;
+            }
         }
     }
 }
