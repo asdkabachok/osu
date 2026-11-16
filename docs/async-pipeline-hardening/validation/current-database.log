@@ -1,0 +1,23 @@
+----------------------------------------------------------
+database Log (LogLevel: Debug)
+Running osu-development-1613 0.0.0.0 on .NET 10.0.12
+Environment: Linux (Unix 7.2.9.1), 8 cores 
+----------------------------------------------------------
+2026-11-16 15:24:43 [verbose]: [LocalCachedBeatmapMetadataSource] Fetching local cache because it does not exist.
+2026-11-16 15:24:47 [verbose]: [?????] Beginning import from triangles.osz...
+2026-11-16 15:24:48 [verbose]: [a1556] Import successfully completed!
+2026-11-16 15:25:02 [verbose]: [LocalCachedBeatmapMetadataSource] Local cache fetch completed successfully.
+2026-11-16 15:26:38 [verbose]: [?????] Beginning import from 241526 Soleily - Renatus.osz...
+2026-11-16 15:26:38 [verbose]: [672a6] [LocalCachedBeatmapMetadataSource] Cached local retrieval for Soleily - Renatus (Deif) [Platter] (cache version 3).
+2026-11-16 15:26:38 [verbose]: [672a6] [LocalCachedBeatmapMetadataSource] Cached local retrieval for Soleily - Renatus (Deif) [Rain] (cache version 3).
+2026-11-16 15:26:38 [verbose]: [672a6] [LocalCachedBeatmapMetadataSource] Cached local retrieval for Soleily - Renatus (Deif) [Salad] (cache version 3).
+2026-11-16 15:26:38 [verbose]: [672a6] [LocalCachedBeatmapMetadataSource] Cached local retrieval for Soleily - Renatus (ExPew) [Another] (cache version 3).
+2026-11-16 15:26:38 [verbose]: [672a6] [LocalCachedBeatmapMetadataSource] Cached local retrieval for Soleily - Renatus (ExPew) [Hyper] (cache version 3).
+2026-11-16 15:26:38 [verbose]: [672a6] [LocalCachedBeatmapMetadataSource] Cached local retrieval for Soleily - Renatus (ExPew) [Normal] (cache version 3).
+2026-11-16 15:26:38 [verbose]: [672a6] [LocalCachedBeatmapMetadataSource] Cached local retrieval for Soleily - Renatus (Gamu) [Hard] (cache version 3).
+2026-11-16 15:26:38 [verbose]: [672a6] [LocalCachedBeatmapMetadataSource] Cached local retrieval for Soleily - Renatus (Gamu) [Insane] (cache version 3).
+2026-11-16 15:26:38 [verbose]: [672a6] [LocalCachedBeatmapMetadataSource] Cached local retrieval for Soleily - Renatus (Gamu) [Normal] (cache version 3).
+2026-11-16 15:26:38 [verbose]: [672a6] [LocalCachedBeatmapMetadataSource] Cached local retrieval for Soleily - Renatus (MMzz) [Futsuu] (cache version 3).
+2026-11-16 15:26:38 [verbose]: [672a6] [LocalCachedBeatmapMetadataSource] Cached local retrieval for Soleily - Renatus (MMzz) [Muzukashii] (cache version 3).
+2026-11-16 15:26:38 [verbose]: [672a6] [LocalCachedBeatmapMetadataSource] Cached local retrieval for Soleily - Renatus (MMzz) [Oni] (cache version 3).
+2026-11-16 15:26:39 [verbose]: [672a6] Import successfully completed!

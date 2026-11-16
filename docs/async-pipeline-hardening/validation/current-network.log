@@ -1,0 +1,21 @@
+----------------------------------------------------------
+network Log (LogLevel: Debug)
+Running osu-development-1613 0.0.0.0 on .NET 10.0.12
+Environment: Linux (Unix 7.2.9.1), 8 cores 
+----------------------------------------------------------
+2026-11-16 15:24:43 [verbose]: API endpoint root: https://dev.ppy.sh
+2026-11-16 15:24:43 [verbose]: API request version: 20261116
+2026-11-16 15:24:48 [verbose]: Request to https://assets.ppy.sh/client-resources/online.db.bz2?20261116 successfully completed!
+2026-11-16 15:24:49 [verbose]: Failing request osu.Game.Online.API.Requests.GetUpdatesRequest (System.Net.WebException: User not logged in)
+2026-11-16 15:24:51 [verbose]: Performing request osu.Game.Online.API.Requests.GetSeasonalBackgroundsRequest
+2026-11-16 15:24:51 [verbose]: Request to https://dev.ppy.sh/api/v2/seasonal-backgrounds successfully completed!
+2026-11-16 15:24:51 [verbose]: GetSeasonalBackgroundsRequest finished with response size of 2 bytes
+2026-11-16 15:24:54 [verbose]: Request to https://assets.ppy.sh/menu-content.json successfully completed!
+2026-11-16 15:26:40 [verbose]: Failing request osu.Game.Online.API.Requests.GetBeatmapSetRequest (System.Net.WebException: User not logged in)
+2026-11-16 15:26:40 [verbose]: Error when fetching online beatmap set: System.AggregateException: One or more errors occurred. (User not logged in)
+2026-11-16 15:26:40 [verbose]: ---> System.Net.WebException: User not logged in
+2026-11-16 15:26:40 [verbose]: --- End of inner exception stack trace ---
+2026-11-16 15:27:04 [verbose]: Failing request osu.Game.Online.API.Requests.GetBeatmapSetRequest (System.Net.WebException: User not logged in)
+2026-11-16 15:27:04 [verbose]: Error when fetching online beatmap set: System.AggregateException: One or more errors occurred. (User not logged in)
+2026-11-16 15:27:04 [verbose]: ---> System.Net.WebException: User not logged in
+2026-11-16 15:27:04 [verbose]: --- End of inner exception stack trace ---

@@ -1,0 +1,10 @@
+Test run for <workspace>/osu/osu.Game.Tests/bin/Debug/net10.0/osu.Game.Tests.dll (.NETCoreApp,Version=v10.0)
+VSTest version 18.0.2-dev (x64)
+
+Starting test execution, please wait...
+A total of 1 test files matched the specified pattern.
+  Skipped TestWindowsPathCaseAliasesShareDatabasePool [< 1 ms]
+WARNING: Overwriting results file: <workspace>/artifacts/tests/multi-metadata.trx
+Results File: <workspace>/artifacts/tests/multi-metadata.trx
+
+Passed!  - Failed:     0, Passed:   540, Skipped:     0, Total:   540, Duration: 22 s - osu.Game.Tests.dll (net10.0)

@@ -1,0 +1,69 @@
+{
+  "captured_utc": "2026-11-16T15:31:29.628842+00:00",
+  "base_commit": "bb3e5591908d2525f544d7e8968f84f6f248ec1b",
+  "baseline_production_source_unmodified": true,
+  "baseline": {
+    "logs": "artifacts/runtime/baseline-fresh-start",
+    "successful_metadata_download_log_entries": 2,
+    "metadata_refresh_successes": 0,
+    "metadata_failure_messages": [
+      "2026-11-16 15:10:19 [verbose]: [LocalCachedBeatmapMetadataSource] Online cache extraction failed: SharpCompress.Common.ArchiveOperationException: BZip2 compressed file ends unexpectedly",
+      "2026-11-16 15:10:23 [verbose]: [LocalCachedBeatmapMetadataSource] Online cache extraction failed: System.IO.FileNotFoundException: Could not find file '<home>/.local/share/osu-development-1612/online.db.bz2'."
+    ],
+    "runtime_error_level_entries": [],
+    "renderer": [
+      "2026-11-16 15:10:11 [verbose]: GL Renderer:                NVIDIA GeForce GTX 1650/PCIe/SSE2"
+    ],
+    "execution_mode": [
+      "2026-11-16 15:10:11 [verbose]: Execution mode changed to MultiThreaded"
+    ],
+    "screen_entries": [
+      "2026-11-16 15:10:16 [verbose]: 📺 OsuScreenStack#497(depth:1) entered Loader#490",
+      "2026-11-16 15:10:20 [verbose]: 📺 OsuScreenStack#497(depth:2) entered IntroTriangles#513",
+      "2026-11-16 15:10:23 [verbose]: 📺 OsuScreenStack#497(depth:3) entered MainMenu#667"
+    ]
+  },
+  "current": {
+    "logs": "artifacts/runtime/current-fresh-start",
+    "successful_metadata_download_log_entries": 1,
+    "metadata_refresh_successes": 1,
+    "metadata_failure_messages": [],
+    "runtime_error_level_entries": [],
+    "renderer": [
+      "2026-11-16 15:24:42 [verbose]: GL Renderer:                NVIDIA GeForce GTX 1650/PCIe/SSE2"
+    ],
+    "execution_mode": [
+      "2026-11-16 15:24:42 [verbose]: Execution mode changed to MultiThreaded"
+    ],
+    "screen_entries": [
+      "2026-11-16 15:24:47 [verbose]: 📺 OsuScreenStack#497(depth:1) entered Loader#490",
+      "2026-11-16 15:24:51 [verbose]: 📺 OsuScreenStack#497(depth:2) entered IntroTriangles#275",
+      "2026-11-16 15:24:54 [verbose]: 📺 OsuScreenStack#497(depth:3) entered MainMenu#405",
+      "2026-11-16 15:26:13 [verbose]: 📺 OsuScreenStack#497(depth:4) entered SoloSongSelect#165",
+      "2026-11-16 15:27:04 [verbose]: 📺 OsuScreenStack#497(depth:5) entered SoloSongSelect+PlayerLoader#602",
+      "2026-11-16 15:27:06 [verbose]: 📺 OsuScreenStack#497(depth:6) entered ReplayPlayer#652",
+      "2026-11-16 15:30:38 [verbose]: 📺 OsuScreenStack#497(depth:7) entered SoloResultsScreen#278"
+    ]
+  },
+  "current_database": {
+    "bytes": 89870336,
+    "schema_version": [
+      [
+        3
+      ]
+    ],
+    "quick_check": [
+      [
+        "ok"
+      ]
+    ],
+    "beatmap_rows": 238223,
+    "temporary_files": []
+  },
+  "limits": [
+    "One fresh-profile startup per variant in an isolated KWin Wayland session; no startup-time or FPS inference.",
+    "Download counts are successful request entries recorded by the game, not packet captures.",
+    "The inferred race mechanism is supported by source review and deterministic tests; logs establish the symptoms.",
+    "Quick_check is a limited SQLite check, not a guarantee against every possible corruption."
+  ]
+}

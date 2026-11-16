@@ -1,0 +1,42 @@
+{
+  "base_commit": "bb3e5591908d2525f544d7e8968f84f6f248ec1b",
+  "checkout_note": "Checkout SHA256 uses the tested CRLF working-tree bytes. Canonical Git blob SHA256 uses LF after the repository .gitattributes normalization. Both identify the same checked-out C# source.",
+  "files": {
+    "osu.Game.Benchmarks/BenchmarkTaskChain.cs": {
+      "checkout_sha256": "fc77d90e7843a2d0c87b86821a20d36a008b21992f2a690e6e1e7263ded45267",
+      "canonical_git_blob_sha256": "320a2814551a8123eadf9cf8a2e80875ba7a7e36be16cfc9c1a3623fe90a7b7d"
+    },
+    "osu.Game.Tests/Beatmaps/LocalCachedBeatmapMetadataSourceTest.cs": {
+      "checkout_sha256": "6251498a75dffbc2a2353b61dcc94024718218a82fdc4b4cc23edf77e4f1c109",
+      "canonical_git_blob_sha256": "98ee291091323c5be2a783c21c12906b1b27b158410eb2da884dbcb9ecd8c8ed"
+    },
+    "osu.Game.Tests/Database/OnlineLookupCacheTest.cs": {
+      "checkout_sha256": "0ebd10d4417d6724be0927ff02b430307da2a236f90e565b9d1d21c545e4312e",
+      "canonical_git_blob_sha256": "a8994f2a1aa67f1e2851aad59f1bf329cc44d2bb9b019cae89115d9767c461fd"
+    },
+    "osu.Game.Tests/Database/TestSceneBeatmapImporterCancellation.cs": {
+      "checkout_sha256": "beb57611bd82ba9d3689bdb5a25493c579ae470d17d67696ed49750dd9fc6ddc",
+      "canonical_git_blob_sha256": "99a24fdf3dad127fb79fd23a36d63fdefe753b4e9033ed7dce7ab4dae122a1a1"
+    },
+    "osu.Game.Tests/NonVisual/TaskExtensionsTest.cs": {
+      "checkout_sha256": "f906627b7ac4aa8c2166bfa2233d16da67b0b0a21e6ce784fa2aa2e44c684c4d",
+      "canonical_git_blob_sha256": "703cf96cdf765c219ab9476bdf6ab8a7e68ab3dab113b68ad28dbbb7c4a344f7"
+    },
+    "osu.Game/Beatmaps/LocalCachedBeatmapMetadataSource.cs": {
+      "checkout_sha256": "00bdf4fdf9d8dc9d9e12ac302248556931b7914fae97aea247dad9aa100a9db7",
+      "canonical_git_blob_sha256": "ebd48239760170b1cdd939d45165f987d0d3647d4ed4559833164a80ee61953e"
+    },
+    "osu.Game/Database/OnlineLookupCache.cs": {
+      "checkout_sha256": "f5dbc686d10f53c16c7596baff1dbf50b101c62a7924fe4ced94321fdc0fc352",
+      "canonical_git_blob_sha256": "536b2b5cf2e9ac81a7d69b56c74916e40fd709a7a44c89dc23c1a6a4951edb17"
+    },
+    "osu.Game/Database/RealmArchiveModelImporter.cs": {
+      "checkout_sha256": "67884d693d3a9e7cc181752915a1320b65b3d6a2027a7ead3ef8563fa2c9c7dc",
+      "canonical_git_blob_sha256": "a285c8f8ef9be2c9956d24b375538ddb4a42f06f8120ec2abbea37ac65333999"
+    },
+    "osu.Game/Extensions/TaskExtensions.cs": {
+      "checkout_sha256": "e43a3aec02d6455a7617040757f47fa6d035fbf9cad487706ec466bb62e3211d",
+      "canonical_git_blob_sha256": "b831766db7b76e5c0b956e88706113c54d7cfec66576e59cc7a37c29dc5c43f3"
+    }
+  }
+}

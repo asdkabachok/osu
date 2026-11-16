@@ -1,0 +1,30 @@
+----------------------------------------------------------
+database Log (LogLevel: Debug)
+Running osu-development-1612 0.0.0.0 on .NET 10.0.12
+Environment: Linux (Unix 7.2.9.1), 8 cores 
+----------------------------------------------------------
+2026-11-16 15:10:12 [verbose]: [LocalCachedBeatmapMetadataSource] Fetching local cache because it does not exist.
+2026-11-16 15:10:16 [verbose]: [?????] Beginning import from triangles.osz...
+2026-11-16 15:10:17 [verbose]: [a1556] Import successfully completed!
+2026-11-16 15:10:19 [verbose]: [LocalCachedBeatmapMetadataSource] Online cache extraction failed: SharpCompress.Common.ArchiveOperationException: BZip2 compressed file ends unexpectedly
+2026-11-16 15:10:19 [verbose]: at SharpCompress.Compressors.BZip2.CBZip2InputStream.CompressedStreamEOF() in D:\a\sharpcompress\sharpcompress\src\SharpCompress\Compressors\BZip2\CBZip2InputStream.cs:line 58
+2026-11-16 15:10:19 [verbose]: at SharpCompress.Compressors.BZip2.CBZip2InputStream.HandleCompressedStreamEof() in D:\a\sharpcompress\sharpcompress\src\SharpCompress\Compressors\BZip2\CBZip2InputStream.cs:line 71
+2026-11-16 15:10:19 [verbose]: at SharpCompress.Compressors.BZip2.CBZip2InputStream.BsR(Int32 n) in D:\a\sharpcompress\sharpcompress\src\SharpCompress\Compressors\BZip2\CBZip2InputStream.cs:line 485
+2026-11-16 15:10:19 [verbose]: at SharpCompress.Compressors.BZip2.CBZip2InputStream.GetAndMoveToFrontDecode() in D:\a\sharpcompress\sharpcompress\src\SharpCompress\Compressors\BZip2\CBZip2InputStream.cs:line 983
+2026-11-16 15:10:19 [verbose]: at SharpCompress.Compressors.BZip2.CBZip2InputStream.InitBlock() in D:\a\sharpcompress\sharpcompress\src\SharpCompress\Compressors\BZip2\CBZip2InputStream.cs:line 391
+2026-11-16 15:10:19 [verbose]: at SharpCompress.Compressors.BZip2.CBZip2InputStream.SetupNoRandPartA() in D:\a\sharpcompress\sharpcompress\src\SharpCompress\Compressors\BZip2\CBZip2InputStream.cs:line 1124
+2026-11-16 15:10:19 [verbose]: at SharpCompress.Compressors.BZip2.CBZip2InputStream.SetupNoRandPartB() in D:\a\sharpcompress\sharpcompress\src\SharpCompress\Compressors\BZip2\CBZip2InputStream.cs:line 1190
+2026-11-16 15:10:19 [verbose]: at SharpCompress.Compressors.BZip2.CBZip2InputStream.ReadByte() in D:\a\sharpcompress\sharpcompress\src\SharpCompress\Compressors\BZip2\CBZip2InputStream.cs:line 279
+2026-11-16 15:10:19 [verbose]: at SharpCompress.Compressors.BZip2.CBZip2InputStream.Read(Byte[] buffer, Int32 offset, Int32 count) in D:\a\sharpcompress\sharpcompress\src\SharpCompress\Compressors\BZip2\CBZip2InputStream.cs:line 1251
+2026-11-16 15:10:19 [verbose]: at SharpCompress.Compressors.BZip2.BZip2Stream.Read(Byte[] buffer, Int32 offset, Int32 count) in D:\a\sharpcompress\sharpcompress\src\SharpCompress\Compressors\BZip2\BZip2Stream.cs:line 97
+2026-11-16 15:10:19 [verbose]: at System.IO.Stream.CopyTo(Stream destination, Int32 bufferSize)
+2026-11-16 15:10:19 [verbose]: at osu.Game.Beatmaps.LocalCachedBeatmapMetadataSource.<>c__DisplayClass10_0.<FetchCache>b__1() in <workspace>/baseline/osu.Game/Beatmaps/LocalCachedBeatmapMetadataSource.cs:line 217
+2026-11-16 15:10:23 [verbose]: [LocalCachedBeatmapMetadataSource] Online cache extraction failed: System.IO.FileNotFoundException: Could not find file '<home>/.local/share/osu-development-1612/online.db.bz2'.
+2026-11-16 15:10:23 [verbose]: File name: '<home>/.local/share/osu-development-1612/online.db.bz2'
+2026-11-16 15:10:23 [verbose]: at Interop.ThrowExceptionForIoErrno(ErrorInfo errorInfo, String path, Boolean isDirError)
+2026-11-16 15:10:23 [verbose]: at Microsoft.Win32.SafeHandles.SafeFileHandle.Open(String path, OpenFlags flags, Int32 mode, Boolean failForSymlink, Boolean& wasSymlink, Func`4 createOpenException)
+2026-11-16 15:10:23 [verbose]: at Microsoft.Win32.SafeHandles.SafeFileHandle.Open(String fullPath, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize, UnixFileMode openPermissions, Int64& fileLength, UnixFileMode& filePermissions, Boolean failForSymlink, Boolean& wasSymlink, Func`4 createOpenException)
+2026-11-16 15:10:23 [verbose]: at System.IO.Strategies.OSFileStreamStrategy..ctor(String path, FileMode mode, FileAccess access, FileShare share, FileOptions options, Int64 preallocationSize, Nullable`1 unixCreateMode)
+2026-11-16 15:10:23 [verbose]: at System.IO.FileStream..ctor(String path, FileMode mode, FileAccess access, FileShare share, Int32 bufferSize, FileOptions options, Int64 preallocationSize)
+2026-11-16 15:10:23 [verbose]: at System.IO.File.OpenRead(String path)
+2026-11-16 15:10:23 [verbose]: at osu.Game.Beatmaps.LocalCachedBeatmapMetadataSource.<>c__DisplayClass10_0.<FetchCache>b__1() in <workspace>/baseline/osu.Game/Beatmaps/LocalCachedBeatmapMetadataSource.cs:line 210

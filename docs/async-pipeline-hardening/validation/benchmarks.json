@@ -1,0 +1,106 @@
+{
+  "units": {
+    "time": "nanoseconds per link",
+    "memory": "managed bytes per link",
+    "error": "half-width of BenchmarkDotNet 99.9 percent confidence interval"
+  },
+  "chain_length": 1000,
+  "variants": {
+    "baseline": {
+      "export_validation": "JSON parses, CSV has exactly both expected methods, Markdown contains both methods",
+      "methods": {
+        "Actions": {
+          "mean_ns": 1432.249930078125,
+          "error_ns": 56.064236003673464,
+          "stddev_ns": 14.55970408247626,
+          "allocated_bytes": 656,
+          "workload_iterations_measured": 5,
+          "workload_iterations_retained_by_bdn": 5,
+          "raw_measured_ns_per_link": [
+            1411.532478515625,
+            1439.590767578125,
+            1424.784498046875,
+            1449.4439609375,
+            1435.92034765625
+          ],
+          "raw_all_five_mean_ns": 1432.2544105468749
+        },
+        "CompletedAsyncFunctions": {
+          "mean_ns": 921.0080793457032,
+          "error_ns": 80.10650594648183,
+          "stddev_ns": 12.396570447130715,
+          "allocated_bytes": 496,
+          "workload_iterations_measured": 5,
+          "workload_iterations_retained_by_bdn": 4,
+          "raw_measured_ns_per_link": [
+            927.5916337890625,
+            924.0658818359375,
+            902.7407978515625,
+            929.647408203125,
+            939.0607197265625
+          ],
+          "raw_all_five_mean_ns": 924.62128828125
+        }
+      }
+    },
+    "current": {
+      "export_validation": "JSON parses, CSV has exactly both expected methods, Markdown contains both methods",
+      "methods": {
+        "Actions": {
+          "mean_ns": 496.1912291015625,
+          "error_ns": 26.739334851034293,
+          "stddev_ns": 6.944120361647214,
+          "allocated_bytes": 376,
+          "workload_iterations_measured": 5,
+          "workload_iterations_retained_by_bdn": 5,
+          "raw_measured_ns_per_link": [
+            488.8382470703125,
+            505.233513671875,
+            498.5078974609375,
+            498.8754423828125,
+            489.52173828125
+          ],
+          "raw_all_five_mean_ns": 496.1953677734375
+        },
+        "CompletedAsyncFunctions": {
+          "mean_ns": 506.3335591796875,
+          "error_ns": 12.74974420918496,
+          "stddev_ns": 3.311068089839577,
+          "allocated_bytes": 288,
+          "workload_iterations_measured": 5,
+          "workload_iterations_retained_by_bdn": 5,
+          "raw_measured_ns_per_link": [
+            507.819755859375,
+            507.0469423828125,
+            500.529966796875,
+            508.81218359375,
+            507.4780244140625
+          ],
+          "raw_all_five_mean_ns": 506.337374609375
+        }
+      }
+    }
+  },
+  "comparisons": {
+    "Actions": {
+      "baseline_to_current_time_ratio": 2.886487801631347,
+      "time_reduction_percent": 65.35582102807318,
+      "allocated_bytes_reduction": 280,
+      "allocation_reduction_percent": 42.6829268292683,
+      "raw_all_five_time_ratio": 2.886472755628064
+    },
+    "CompletedAsyncFunctions": {
+      "baseline_to_current_time_ratio": 1.8189749872353536,
+      "time_reduction_percent": 45.02398290149704,
+      "allocated_bytes_reduction": 208,
+      "allocation_reduction_percent": 41.93548387096774,
+      "raw_all_five_time_ratio": 1.8260972518462997
+    }
+  },
+  "limitations": [
+    "Shared interactive laptop host; unrelated system activity, CPU frequency and temperature may add noise.",
+    "Single launch and five measured workload iterations per method; only scheduling and completion overhead of no-op TaskChain links is measured.",
+    "BDN default upper-outlier removal retained four observations for baseline CompletedAsyncFunctions and five for the other three method/variant combinations.",
+    "Allocation reductions are the primary stable comparison. Results do not establish game FPS, gameplay frame-time, input latency, or real-world workload improvements."
+  ]
+}

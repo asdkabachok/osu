@@ -1,0 +1,28 @@
+  osu.Game -> <workspace>/osu/osu.Game/bin/Debug/net10.0/osu.Game.dll
+  osu.Game.Tournament -> <workspace>/osu/osu.Game.Tournament/bin/Debug/net10.0/osu.Game.Tournament.dll
+  osu.Game.Rulesets.Mania -> <workspace>/osu/osu.Game.Rulesets.Mania/bin/Debug/net10.0/osu.Game.Rulesets.Mania.dll
+  osu.Game.Rulesets.Taiko -> <workspace>/osu/osu.Game.Rulesets.Taiko/bin/Debug/net10.0/osu.Game.Rulesets.Taiko.dll
+  osu.Game.Rulesets.Catch -> <workspace>/osu/osu.Game.Rulesets.Catch/bin/Debug/net10.0/osu.Game.Rulesets.Catch.dll
+  osu.Game.Rulesets.EmptyFreeform -> <workspace>/osu/Templates/Rulesets/ruleset-empty/osu.Game.Rulesets.EmptyFreeform/bin/Debug/net10.0/osu.Game.Rulesets.EmptyFreeform.dll
+  osu.Game.Rulesets.Osu -> <workspace>/osu/osu.Game.Rulesets.Osu/bin/Debug/net10.0/osu.Game.Rulesets.Osu.dll
+  osu.Game.Rulesets.EmptyFreeform.Tests -> <workspace>/osu/Templates/Rulesets/ruleset-empty/osu.Game.Rulesets.EmptyFreeform.Tests/bin/Debug/net10.0/osu.Game.Rulesets.EmptyFreeform.Tests.dll
+  osu.Game.Rulesets.Catch.Tests -> <workspace>/osu/osu.Game.Rulesets.Catch.Tests/bin/Debug/net10.0/osu.Game.Rulesets.Catch.Tests.dll
+  osu.Game.Rulesets.Pippidon -> <workspace>/osu/Templates/Rulesets/ruleset-example/osu.Game.Rulesets.Pippidon/bin/Debug/net10.0/osu.Game.Rulesets.Pippidon.dll
+  osu.Game.Rulesets.Pippidon.Tests -> <workspace>/osu/Templates/Rulesets/ruleset-example/osu.Game.Rulesets.Pippidon.Tests/bin/Debug/net10.0/osu.Game.Rulesets.Pippidon.Tests.dll
+  osu.Game.Rulesets.EmptyScrolling -> <workspace>/osu/Templates/Rulesets/ruleset-scrolling-empty/osu.Game.Rulesets.EmptyScrolling/bin/Debug/net10.0/osu.Game.Rulesets.EmptyScrolling.dll
+  osu.Game.Rulesets.EmptyScrolling.Tests -> <workspace>/osu/Templates/Rulesets/ruleset-scrolling-empty/osu.Game.Rulesets.EmptyScrolling.Tests/bin/Debug/net10.0/osu.Game.Rulesets.EmptyScrolling.Tests.dll
+  osu.Game.Rulesets.Pippidon -> <workspace>/osu/Templates/Rulesets/ruleset-scrolling-example/osu.Game.Rulesets.Pippidon/bin/Debug/net10.0/osu.Game.Rulesets.Pippidon.dll
+  osu.Game.Rulesets.Pippidon.Tests -> <workspace>/osu/Templates/Rulesets/ruleset-scrolling-example/osu.Game.Rulesets.Pippidon.Tests/bin/Debug/net10.0/osu.Game.Rulesets.Pippidon.Tests.dll
+  osu.Game.Tests -> <workspace>/osu/osu.Game.Tests/bin/Debug/net10.0/osu.Game.Tests.dll
+  osu.Desktop -> <workspace>/osu/osu.Desktop/bin/Debug/net10.0/osu!.dll
+  osu.Game.Rulesets.Osu.Tests -> <workspace>/osu/osu.Game.Rulesets.Osu.Tests/bin/Debug/net10.0/osu.Game.Rulesets.Osu.Tests.dll
+  osu.Game.Rulesets.Mania.Tests -> <workspace>/osu/osu.Game.Rulesets.Mania.Tests/bin/Debug/net10.0/osu.Game.Rulesets.Mania.Tests.dll
+  osu.Game.Benchmarks -> <workspace>/osu/osu.Game.Benchmarks/bin/Debug/net10.0/osu.Game.Benchmarks.dll
+  osu.Game.Tournament.Tests -> <workspace>/osu/osu.Game.Tournament.Tests/bin/Debug/net10.0/osu.Game.Tournament.Tests.dll
+  osu.Game.Rulesets.Taiko.Tests -> <workspace>/osu/osu.Game.Rulesets.Taiko.Tests/bin/Debug/net10.0/osu.Game.Rulesets.Taiko.Tests.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:29.05
